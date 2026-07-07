@@ -80,6 +80,9 @@ PlasmoidItem {
     property double now: Date.now()
 
     property string fetchScript: Qt.resolvedUrl("../code/fetch.sh").toString().replace("file://", "")
+    // hard timeout so a hung collector never leaves the source stuck
+    // (a stuck source silently swallows every later refresh request)
+    property string fetchCmd: "timeout 55 bash " + fetchScript
 
     // ----------------- helpers -----------------
     function money(v) { return "$" + v.toFixed(v >= 100 ? 0 : 2) }
@@ -188,7 +191,8 @@ PlasmoidItem {
         interval: 60000; running: true; repeat: true; triggeredOnStart: true
         onTriggered: {
             root.now = Date.now()
-            fetcher.connectSource("bash " + root.fetchScript)
+            fetcher.disconnectSource(root.fetchCmd)
+            fetcher.connectSource(root.fetchCmd)
         }
     }
 
@@ -265,7 +269,10 @@ PlasmoidItem {
                 }
                 PC3.ToolButton {
                     icon.name: "view-refresh"
-                    onClicked: fetcher.connectSource("bash " + root.fetchScript)
+                    onClicked: {
+                        fetcher.disconnectSource(root.fetchCmd)
+                        fetcher.connectSource(root.fetchCmd)
+                    }
                 }
                 PC3.ToolButton {
                     icon.name: "configure"

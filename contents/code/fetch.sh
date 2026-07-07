@@ -41,12 +41,19 @@ spark=$(jq -cn --argjson d "$daily" --argjson days "$days" \
 
 # ----------------- claude live limits (local OAuth token) -----------------
 live='null'
+DBG="${XDG_RUNTIME_DIR:-/tmp}/cctop-debug.log"
 tok=$(jq -r '.claudeAiOauth.accessToken // empty' "$CREDS" 2>/dev/null)
 if [ -n "$tok" ]; then
-  resp=$(curl -sf --max-time 15 "https://api.anthropic.com/api/oauth/usage" \
+  resp=$(curl -s --max-time 15 -w '\n%{http_code}' "https://api.anthropic.com/api/oauth/usage" \
     -H "Authorization: Bearer $tok" \
     -H "anthropic-beta: oauth-2025-04-20" \
     -H "Content-Type: application/json" 2>/dev/null)
+  rc=$?
+  http=${resp##*$'\n'}
+  resp=${resp%$'\n'*}
+  [ "$http" != "200" ] && resp=""
+  echo "$(date '+%F %T') curl_rc=$rc http=$http resp_len=${#resp} tok_len=${#tok}" >> "$DBG"
+  [ "$(wc -l < "$DBG" 2>/dev/null || echo 0)" -gt 200 ] && { tail -n 100 "$DBG" > "$DBG.t" && mv "$DBG.t" "$DBG"; }
   if [ -n "$resp" ]; then
     live=$(jq -c '{
       session: {pct: (.five_hour.utilization // 0), resets_at: .five_hour.resets_at},

@@ -1,0 +1,19 @@
+{
+    "KPlugin": {
+        "Authors": [
+            {
+                "Name": "NventaTech"
+            }
+        ],
+        "Category": "System Information",
+        "Description": "AI usage and cost monitor — Claude Code live limits, monthly spend per provider, subscriptions. 100% local data.",
+        "Icon": "office-chart-bar",
+        "Id": "com.nventatech.cctop",
+        "License": "GPL-3.0+",
+        "Name": "cctop",
+        "Version": "1.0.0",
+        "Website": "https://github.com/nventatech-tech/cctop"
+    },
+    "KPackageStructure": "Plasma/Applet",
+    "X-Plasma-API-Minimum-Version": "6.0"
+}

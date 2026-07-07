@@ -58,8 +58,11 @@ shows, and the notification threshold.
 
 ## Donate
 
-If cctop is useful to you, you can support development — see the ❤ button in
-the widget header.
+If cctop is useful to you, you can support development — the ❤ button in the
+widget header, [this PayPal link](https://www.paypal.com/donate/?business=SR28XBBCYSPHE&no_recurring=0&item_name=Help+me+buy+a+coffee.&currency_code=USD)
+or the QR code:
+
+<img src="contents/images/donate-qr.png" width="140" alt="PayPal donation QR code">
 
 ## License
 

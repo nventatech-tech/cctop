@@ -1,4 +1,4 @@
-// cctop - settings page (language, panel display, notifications).
+// cctop - settings page (language, panel display, notifications, donate).
 import QtQuick
 import QtQuick.Controls as QQC2
 import org.kde.kirigami as Kirigami
@@ -9,6 +9,8 @@ Kirigami.FormLayout {
     property string cfg_language
     property string cfg_panelDisplay
     property int cfg_notifyThreshold
+
+    readonly property string donateUrl: "https://www.paypal.com/donate/?business=SR28XBBCYSPHE&no_recurring=0&item_name=Help+me+buy+a+coffee.&currency_code=USD"
 
     QQC2.ComboBox {
         Kirigami.FormData.label: "Language:"
@@ -43,5 +45,22 @@ Kirigami.FormLayout {
         stepSize: 5
         value: page.cfg_notifyThreshold
         onValueModified: page.cfg_notifyThreshold = value
+    }
+
+    Kirigami.Separator { Kirigami.FormData.isSection: true }
+
+    QQC2.Button {
+        Kirigami.FormData.label: "Enjoying cctop?"
+        text: "Donate via PayPal ❤"
+        icon.name: "love"
+        onClicked: Qt.openUrlExternally(page.donateUrl)
+    }
+
+    Image {
+        Kirigami.FormData.label: " "
+        source: Qt.resolvedUrl("../images/donate-qr.png")
+        sourceSize.width: 140
+        sourceSize.height: 140
+        fillMode: Image.PreserveAspectFit
     }
 }

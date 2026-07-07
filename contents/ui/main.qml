@@ -30,7 +30,7 @@ PlasmoidItem {
     property var extraSubscriptions: []
 
     // donation link (heart button in the header; hidden while empty)
-    property string donateUrl: ""
+    property string donateUrl: "https://www.paypal.com/donate/?business=SR28XBBCYSPHE&no_recurring=0&item_name=Help+me+buy+a+coffee.&currency_code=USD"
 
     // ----------------- i18n -----------------
     readonly property string lang: Plasmoid.configuration.language

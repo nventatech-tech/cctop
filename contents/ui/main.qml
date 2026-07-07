@@ -227,6 +227,9 @@ PlasmoidItem {
         Layout.preferredHeight: column.implicitHeight + Kirigami.Units.gridUnit * 2
         Layout.minimumWidth: Layout.preferredWidth
         Layout.minimumHeight: Layout.preferredHeight
+        // keeps the dialog from staying tall after the history card collapses
+        Layout.maximumWidth: Layout.preferredWidth
+        Layout.maximumHeight: Layout.preferredHeight
 
         readonly property int microSize: Math.round(Kirigami.Theme.defaultFont.pixelSize * 0.9)
         readonly property int smallSize: Math.round(Kirigami.Theme.defaultFont.pixelSize * 1.0)

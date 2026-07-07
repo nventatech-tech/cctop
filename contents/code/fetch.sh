@@ -40,28 +40,41 @@ spark=$(jq -cn --argjson d "$daily" --argjson days "$days" \
   '[ $days[] as $day | {d: $day, c: ((($d.daily // []) | map(select(.period == $day) | .totalCost) | add) // 0)} ]')
 
 # ----------------- claude live limits (local OAuth token) -----------------
+# The endpoint rate-limits aggressive polling (HTTP 429), so successful
+# responses are cached for 4 min and reused — including as fallback when a
+# request fails. Costs keep refreshing every cycle; limits move slowly.
 live='null'
 DBG="${XDG_RUNTIME_DIR:-/tmp}/cctop-debug.log"
-tok=$(jq -r '.claudeAiOauth.accessToken // empty' "$CREDS" 2>/dev/null)
-if [ -n "$tok" ]; then
-  resp=$(curl -s --max-time 15 -w '\n%{http_code}' "https://api.anthropic.com/api/oauth/usage" \
-    -H "Authorization: Bearer $tok" \
-    -H "anthropic-beta: oauth-2025-04-20" \
-    -H "Content-Type: application/json" 2>/dev/null)
-  rc=$?
-  http=${resp##*$'\n'}
-  resp=${resp%$'\n'*}
-  [ "$http" != "200" ] && resp=""
-  echo "$(date '+%F %T') curl_rc=$rc http=$http resp_len=${#resp} tok_len=${#tok}" >> "$DBG"
-  [ "$(wc -l < "$DBG" 2>/dev/null || echo 0)" -gt 200 ] && { tail -n 100 "$DBG" > "$DBG.t" && mv "$DBG.t" "$DBG"; }
-  if [ -n "$resp" ]; then
-    live=$(jq -c '{
-      session: {pct: (.five_hour.utilization // 0), resets_at: .five_hour.resets_at},
-      weekly:  {pct: (.seven_day.utilization // 0), resets_at: .seven_day.resets_at},
-      weekly_model: ((.limits // []) | map(select(.kind == "weekly_scoped")) | (.[0] // null)
-                    | if . then {pct: .percent, resets_at: .resets_at} else null end)
-    }' <<<"$resp" 2>/dev/null) || live='null'
+CACHE="${XDG_RUNTIME_DIR:-/tmp}/cctop-live.json"
+cacheAge=999999
+[ -s "$CACHE" ] && cacheAge=$(( $(date +%s) - $(stat -c %Y "$CACHE") ))
+if [ "$cacheAge" -lt 240 ]; then
+  live=$(cat "$CACHE")
+else
+  tok=$(jq -r '.claudeAiOauth.accessToken // empty' "$CREDS" 2>/dev/null)
+  if [ -n "$tok" ]; then
+    resp=$(curl -s --max-time 15 -w '\n%{http_code}' "https://api.anthropic.com/api/oauth/usage" \
+      -H "Authorization: Bearer $tok" \
+      -H "anthropic-beta: oauth-2025-04-20" \
+      -H "Content-Type: application/json" 2>/dev/null)
+    rc=$?
+    http=${resp##*$'\n'}
+    resp=${resp%$'\n'*}
+    [ "$http" != "200" ] && resp=""
+    echo "$(date '+%F %T') curl_rc=$rc http=$http resp_len=${#resp}" >> "$DBG"
+    [ "$(wc -l < "$DBG" 2>/dev/null || echo 0)" -gt 200 ] && { tail -n 100 "$DBG" > "$DBG.t" && mv "$DBG.t" "$DBG"; }
+    if [ -n "$resp" ]; then
+      live=$(jq -c '{
+        session: {pct: (.five_hour.utilization // 0), resets_at: .five_hour.resets_at},
+        weekly:  {pct: (.seven_day.utilization // 0), resets_at: .seven_day.resets_at},
+        weekly_model: ((.limits // []) | map(select(.kind == "weekly_scoped")) | (.[0] // null)
+                      | if . then {pct: .percent, resets_at: .resets_at} else null end)
+      }' <<<"$resp" 2>/dev/null) || live='null'
+      [ "$live" != "null" ] && [ -n "$live" ] && printf '%s' "$live" > "$CACHE"
+    fi
   fi
+  # request failed: reuse the last good limits instead of dropping them
+  [ "${live:-null}" = "null" ] && [ -s "$CACHE" ] && live=$(cat "$CACHE")
 fi
 [ -z "$live" ] && live='null'
 

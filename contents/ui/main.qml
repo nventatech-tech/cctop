@@ -25,9 +25,19 @@ PlasmoidItem {
     property color warnColor: "#fbbf24"
     property color alertColor: "#f2585f"
 
-    // extra fixed subscriptions (name, price, currency) — auto-detected
-    // Claude plan is prepended to this list
-    property var extraSubscriptions: []
+    // extra fixed subscriptions configured in the settings page (JSON string);
+    // the auto-detected Claude plan is prepended to this list
+    readonly property var extraSubscriptions: parseSubs(Plasmoid.configuration.extraSubscriptions)
+    function parseSubs(s) {
+        try {
+            return JSON.parse(s).map(function(e) {
+                return { name: e.name, price: e.price, currency: e.currency || "US$" }
+            })
+        } catch (e) { return [] }
+    }
+
+    // privacy mode: replace every money value with dots (eye button in the header)
+    readonly property bool hideValues: Plasmoid.configuration.privacy
 
     // donation link (heart button in the header; hidden while empty)
     property string donateUrl: "https://www.paypal.com/donate/?business=SR28XBBCYSPHE&no_recurring=0&item_name=Help+me+buy+a+coffee.&currency_code=USD"
@@ -88,7 +98,10 @@ PlasmoidItem {
     property string fetchCmd: "timeout 55 bash " + fetchScript
 
     // ----------------- helpers -----------------
-    function money(v) { return "$" + v.toFixed(v >= 100 ? 0 : 2) }
+    function money(v) {
+        if (hideValues) return "$•••"
+        return "$" + v.toFixed(v >= 100 ? 0 : 2)
+    }
 
     // green (0%) → yellow (~50%) → red (100%), like the Claude Code usage bar
     function sevColor(pct) {
@@ -136,7 +149,8 @@ PlasmoidItem {
     function compactText() {
         var mode = Plasmoid.configuration.panelDisplay
         if (mode === "today") return money(costToday)
-        if (mode === "subs") return (subscription ? subscription.currency : "US$") + subsTotal()
+        if (mode === "subs") return hideValues ? "•••"
+            : (subscription ? subscription.currency : "US$") + subsTotal()
         return live ? live.session.pct + "%" : (block ? money(block.costUSD) : "cc")
     }
 
@@ -225,6 +239,13 @@ PlasmoidItem {
         Layout.preferredWidth: compactRow.implicitWidth + Kirigami.Units.smallSpacing * 4
         Layout.minimumWidth: Layout.preferredWidth
         onClicked: root.expanded = !root.expanded
+        // scrolling over the panel widget cycles the display mode
+        onWheel: function(wheel) {
+            var modes = ["session", "today", "subs"]
+            var i = modes.indexOf(Plasmoid.configuration.panelDisplay)
+            var next = (i + (wheel.angleDelta.y < 0 ? 1 : modes.length - 1)) % modes.length
+            Plasmoid.configuration.panelDisplay = modes[next]
+        }
         Row {
             id: compactRow
             anchors.centerIn: parent
@@ -292,6 +313,12 @@ PlasmoidItem {
                     font.pixelSize: fullRep.microSize
                     Layout.fillWidth: true
                     horizontalAlignment: Text.AlignRight
+                }
+                PC3.ToolButton {
+                    icon.name: root.hideValues ? "view-hidden" : "view-visible"
+                    checkable: true
+                    checked: root.hideValues
+                    onClicked: Plasmoid.configuration.privacy = checked
                 }
                 PC3.ToolButton {
                     icon.name: "love"
@@ -670,7 +697,8 @@ PlasmoidItem {
                                 Layout.fillWidth: true
                             }
                             PC3.Label {
-                                text: modelData.currency + modelData.price + root.tr("perMonth")
+                                text: (root.hideValues ? modelData.currency + "•••"
+                                    : modelData.currency + modelData.price) + root.tr("perMonth")
                                 color: root.mutedColor
                                 font.pixelSize: fullRep.smallSize
                             }
@@ -687,7 +715,8 @@ PlasmoidItem {
                             Layout.fillWidth: true
                         }
                         PC3.Label {
-                            text: (root.subscription ? root.subscription.currency : "US$") + root.subsTotal() + root.tr("perMonth")
+                            text: (root.subscription ? root.subscription.currency : "US$")
+                                + (root.hideValues ? "•••" : root.subsTotal()) + root.tr("perMonth")
                             font.bold: true
                             color: root.accentColor
                             font.pixelSize: fullRep.smallSize

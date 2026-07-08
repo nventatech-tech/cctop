@@ -313,26 +313,10 @@ PlasmoidItem {
                     onClicked: Plasmoid.configuration.privacy = checked
                 }
                 PC3.ToolButton {
-                    icon.name: "love"
-                    visible: root.donateUrl !== ""
-                    onClicked: Qt.openUrlExternally(root.donateUrl)
-                }
-                PC3.ToolButton {
                     icon.name: "view-history"
                     checkable: true
                     checked: root.showHistory
                     onClicked: root.showHistory = !root.showHistory
-                }
-                PC3.ToolButton {
-                    icon.name: "view-refresh"
-                    onClicked: {
-                        fetcher.disconnectSource(root.fetchCmd)
-                        fetcher.connectSource(root.fetchCmd)
-                    }
-                }
-                PC3.ToolButton {
-                    icon.name: "configure"
-                    onClicked: Plasmoid.internalAction("configure").trigger()
                 }
             }
 
@@ -714,6 +698,29 @@ PlasmoidItem {
                             font.pixelSize: fullRep.smallSize
                         }
                     }
+                }
+            }
+
+            // ---------- footer: utility actions ----------
+            RowLayout {
+                Layout.fillWidth: true
+                spacing: Kirigami.Units.smallSpacing
+                PC3.ToolButton {
+                    icon.name: "love"
+                    visible: root.donateUrl !== ""
+                    onClicked: Qt.openUrlExternally(root.donateUrl)
+                }
+                Item { Layout.fillWidth: true }
+                PC3.ToolButton {
+                    icon.name: "view-refresh"
+                    onClicked: {
+                        fetcher.disconnectSource(root.fetchCmd)
+                        fetcher.connectSource(root.fetchCmd)
+                    }
+                }
+                PC3.ToolButton {
+                    icon.name: "configure"
+                    onClicked: Plasmoid.internalAction("configure").trigger()
                 }
             }
 

@@ -17,8 +17,13 @@ no API keys, no telemetry.
   stores locally)
 - **Recent sessions** — last sessions with model and cost
 - **Subscription auto-detection** — your Claude plan (Pro / Max 5x / Max 20x)
-  is read from the local CLI config; extra subscriptions can be added
+  and your ChatGPT plan (Plus / Pro / Team, from the Codex CLI login) are read
+  from local CLI files
+- **Monthly budget** — optional limit with progress bar and a notification
+  when the spend crosses it
+- **Privacy mode** — the eye button masks every money value (panel included)
 - **Desktop notification** when the session crosses a configurable threshold
+- **Scroll on the panel widget** to cycle session % / spend today / subscriptions
 - **Languages**: English, Português (Brasil), Español
 
 ### Providers
@@ -54,12 +59,12 @@ Then add the **cctop** widget to your panel.
 ## Configuration
 
 Right-click the widget → *Configure cctop*: language, what the panel label
-shows, and the notification threshold.
+shows, notification threshold, monthly budget and refresh interval.
 
 ## Donate
 
 If cctop is useful to you, you can support development — the ❤ button in the
-widget header, [this PayPal link](https://www.paypal.com/donate/?business=SR28XBBCYSPHE&no_recurring=0&item_name=Help+me+buy+a+coffee.&currency_code=USD)
+widget, [this PayPal link](https://www.paypal.com/donate/?business=SR28XBBCYSPHE&no_recurring=0&item_name=Help+me+buy+a+coffee.&currency_code=USD)
 or the QR code:
 
 <img src="contents/images/donate-qr.png" width="140" alt="PayPal donation QR code">

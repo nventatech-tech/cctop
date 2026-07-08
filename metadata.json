@@ -7,7 +7,7 @@
         ],
         "Category": "System Information",
         "Description": "AI usage and cost monitor — Claude Code live limits, monthly spend per provider, subscriptions. 100% local data.",
-        "Icon": "office-chart-bar",
+        "Icon": "cctop",
         "Id": "com.nventatech.cctop",
         "License": "GPL-3.0+",
         "Name": "cctop",

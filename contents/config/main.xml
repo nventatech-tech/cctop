@@ -14,5 +14,11 @@
         <entry name="notifyThreshold" type="Int">
             <default>85</default>
         </entry>
+        <entry name="refreshInterval" type="Int">
+            <default>60</default>
+        </entry>
+        <entry name="budgetMonthly" type="Int">
+            <default>0</default>
+        </entry>
     </group>
 </kcfg>

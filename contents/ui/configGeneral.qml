@@ -9,11 +9,15 @@ Kirigami.FormLayout {
     property string cfg_language
     property string cfg_panelDisplay
     property int cfg_notifyThreshold
+    property int cfg_refreshInterval
+    property int cfg_budgetMonthly
 
     // defaults mirrored from config/main.xml (silences plasmashell warnings)
     property string cfg_languageDefault: "en"
     property string cfg_panelDisplayDefault: "session"
     property int cfg_notifyThresholdDefault: 85
+    property int cfg_refreshIntervalDefault: 60
+    property int cfg_budgetMonthlyDefault: 0
 
     readonly property string donateUrl: "https://www.paypal.com/donate/?business=SR28XBBCYSPHE&no_recurring=0&item_name=Help+me+buy+a+coffee.&currency_code=USD"
 
@@ -53,6 +57,24 @@ Kirigami.FormLayout {
         stepSize: 5
         value: page.cfg_notifyThreshold
         onValueModified: page.cfg_notifyThreshold = value
+    }
+
+    QQC2.SpinBox {
+        Kirigami.FormData.label: "Monthly budget in US$ (0 = off):"
+        from: 0
+        to: 100000
+        stepSize: 10
+        value: page.cfg_budgetMonthly
+        onValueModified: page.cfg_budgetMonthly = value
+    }
+
+    QQC2.SpinBox {
+        Kirigami.FormData.label: "Refresh every (seconds):"
+        from: 30
+        to: 3600
+        stepSize: 30
+        value: page.cfg_refreshInterval
+        onValueModified: page.cfg_refreshInterval = value
     }
 
     Kirigami.Separator { Kirigami.FormData.isSection: true }

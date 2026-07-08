@@ -41,7 +41,7 @@ PlasmoidItem {
             resets: "resets", inWord: "in", thisWindow: "this window",
             noSession: "no live data", subs: "SUBSCRIPTIONS", subsTotal: "Total",
             perMonth: "/mo", tipMonth: "this month", tipSession: "session",
-            hist: "RECENT SESSIONS"
+            hist: "RECENT SESSIONS", budget: "budget"
         },
         pt_BR: {
             loading: "carregando…", month: "este mês", today: "hoje",
@@ -49,7 +49,7 @@ PlasmoidItem {
             resets: "reseta", inWord: "em", thisWindow: "nesta janela",
             noSession: "sem dados ao vivo", subs: "ASSINATURAS", subsTotal: "Total",
             perMonth: "/mês", tipMonth: "neste mês", tipSession: "sessão",
-            hist: "SESSÕES RECENTES"
+            hist: "SESSÕES RECENTES", budget: "orçamento"
         },
         es: {
             loading: "cargando…", month: "este mes", today: "hoy",
@@ -57,7 +57,7 @@ PlasmoidItem {
             resets: "se reinicia", inWord: "en", thisWindow: "en esta ventana",
             noSession: "sin datos en vivo", subs: "SUSCRIPCIONES", subsTotal: "Total",
             perMonth: "/mes", tipMonth: "en este mes", tipSession: "sesión",
-            hist: "SESIONES RECIENTES"
+            hist: "SESIONES RECIENTES", budget: "presupuesto"
         }
     })
     readonly property var localeNames: ({ en: "en_US", pt_BR: "pt_BR", es: "es_ES" })
@@ -76,6 +76,9 @@ PlasmoidItem {
     property bool showHistory: false
     property bool liveStale: false
     property bool notified: false
+    property bool budgetNotified: false
+    readonly property int budgetM: Plasmoid.configuration.budgetMonthly
+    readonly property real budgetPct: budgetM > 0 ? costMonth / budgetM * 100 : 0
     property bool loaded: false
     property double now: Date.now()
 
@@ -149,6 +152,17 @@ PlasmoidItem {
         notifier.connectSource("notify-send -a cctop -i office-chart-bar cctop \"" + msg + "\"")
     }
 
+    // one notification per month when the spend crosses the budget
+    function checkBudget() {
+        var b = Plasmoid.configuration.budgetMonthly
+        if (b <= 0 || !loaded) return
+        if (costMonth < b) { budgetNotified = false; return }
+        if (budgetNotified) return
+        budgetNotified = true
+        var msg = money(costMonth) + " / " + money(b) + " " + tr("budget")
+        notifier.connectSource("notify-send -a cctop -i office-chart-bar cctop \"" + msg + "\"")
+    }
+
     // ===================== DATA =====================
     P5Support.DataSource {
         id: fetcher
@@ -176,6 +190,7 @@ PlasmoidItem {
                 root.spark = j.spark || []
                 root.loaded = true
                 root.checkNotify()
+                root.checkBudget()
             } catch (e) { /* keep last values */ }
         }
     }
@@ -188,7 +203,8 @@ PlasmoidItem {
     }
 
     Timer {
-        interval: 60000; running: true; repeat: true; triggeredOnStart: true
+        interval: Math.max(30, Plasmoid.configuration.refreshInterval) * 1000
+        running: true; repeat: true; triggeredOnStart: true
         onTriggered: {
             root.now = Date.now()
             fetcher.disconnectSource(root.fetchCmd)
@@ -206,17 +222,30 @@ PlasmoidItem {
 
     // ===================== PANEL =====================
     compactRepresentation: MouseArea {
-        Layout.preferredWidth: label.implicitWidth + Kirigami.Units.smallSpacing * 4
+        Layout.preferredWidth: compactRow.implicitWidth + Kirigami.Units.smallSpacing * 4
         Layout.minimumWidth: Layout.preferredWidth
         onClicked: root.expanded = !root.expanded
-        PC3.Label {
-            id: label
+        Row {
+            id: compactRow
             anchors.centerIn: parent
-            text: root.compactText()
-            font.family: "monospace"
-            font.bold: true
-            color: Plasmoid.configuration.panelDisplay === "session" && root.live
-                ? root.sevColor(root.live.session.pct) : Kirigami.Theme.textColor
+            spacing: Kirigami.Units.smallSpacing
+            Kirigami.Icon {
+                source: Qt.resolvedUrl("../icons/cctop-symbolic.svg")
+                width: label.implicitHeight
+                height: width
+                anchors.verticalCenter: parent.verticalCenter
+                isMask: true
+                color: label.color
+            }
+            PC3.Label {
+                id: label
+                anchors.verticalCenter: parent.verticalCenter
+                text: root.compactText()
+                font.family: "monospace"
+                font.bold: true
+                color: Plasmoid.configuration.panelDisplay === "session" && root.live
+                    ? root.sevColor(root.live.session.pct) : Kirigami.Theme.textColor
+            }
         }
     }
 
@@ -246,6 +275,11 @@ PlasmoidItem {
             RowLayout {
                 Layout.fillWidth: true
                 spacing: Kirigami.Units.smallSpacing * 2
+                Kirigami.Icon {
+                    source: Qt.resolvedUrl("../icons/cctop.svg")
+                    Layout.preferredWidth: Kirigami.Units.iconSizes.smallMedium
+                    Layout.preferredHeight: Kirigami.Units.iconSizes.smallMedium
+                }
                 PC3.Label {
                     text: "cctop"
                     font.bold: true
@@ -298,6 +332,31 @@ PlasmoidItem {
                     text: root.tr("month") + "  ·  " + root.tr("today") + " " + root.money(root.costToday)
                     color: root.mutedColor
                     font.pixelSize: fullRep.smallSize
+                }
+
+                // monthly budget progress (only when a budget is configured)
+                RowLayout {
+                    Layout.fillWidth: true
+                    Layout.topMargin: Kirigami.Units.smallSpacing
+                    visible: root.budgetM > 0
+                    spacing: Kirigami.Units.smallSpacing * 2
+                    Rectangle {
+                        Layout.fillWidth: true
+                        height: 6
+                        radius: 3
+                        color: root.surface2Color
+                        Rectangle {
+                            width: parent.width * Math.min(1, root.budgetPct / 100)
+                            height: parent.height
+                            radius: 3
+                            color: root.sevColor(root.budgetPct)
+                        }
+                    }
+                    PC3.Label {
+                        text: Math.round(root.budgetPct) + "% · " + root.money(root.budgetM) + " " + root.tr("budget")
+                        color: root.mutedColor
+                        font.pixelSize: fullRep.microSize
+                    }
                 }
 
                 Rectangle {

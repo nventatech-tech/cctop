@@ -25,17 +25,6 @@ PlasmoidItem {
     property color warnColor: "#fbbf24"
     property color alertColor: "#f2585f"
 
-    // extra fixed subscriptions configured in the settings page (JSON string);
-    // the auto-detected Claude plan is prepended to this list
-    readonly property var extraSubscriptions: parseSubs(Plasmoid.configuration.extraSubscriptions)
-    function parseSubs(s) {
-        try {
-            return JSON.parse(s).map(function(e) {
-                return { name: e.name, price: e.price, currency: e.currency || "US$" }
-            })
-        } catch (e) { return [] }
-    }
-
     // privacy mode: replace every money value with dots (eye button in the header)
     readonly property bool hideValues: Plasmoid.configuration.privacy
 
@@ -138,11 +127,7 @@ PlasmoidItem {
         var list = []
         if (subscription) list.push(subscription)
         if (subscriptionOpenai) list.push(subscriptionOpenai)
-        // manual entries never duplicate an auto-detected plan
-        var names = list.map(function(s) { return s.name })
-        return list.concat(extraSubscriptions.filter(function(e) {
-            return names.indexOf(e.name) < 0
-        }))
+        return list
     }
 
     function subsTotal() {

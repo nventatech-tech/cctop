@@ -20,9 +20,6 @@
         <entry name="budgetMonthly" type="Int">
             <default>0</default>
         </entry>
-        <entry name="extraSubscriptions" type="String">
-            <default>[]</default>
-        </entry>
         <entry name="privacy" type="Bool">
             <default>false</default>
         </entry>

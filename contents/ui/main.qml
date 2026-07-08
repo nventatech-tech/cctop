@@ -80,6 +80,7 @@ PlasmoidItem {
     property var block: null
     property var live: null
     property var subscription: null
+    property var subscriptionOpenai: null
     property var sessionModels: []
     property var history: []
     property var spark: []
@@ -136,7 +137,12 @@ PlasmoidItem {
     function allSubscriptions() {
         var list = []
         if (subscription) list.push(subscription)
-        return list.concat(extraSubscriptions)
+        if (subscriptionOpenai) list.push(subscriptionOpenai)
+        // manual entries never duplicate an auto-detected plan
+        var names = list.map(function(s) { return s.name })
+        return list.concat(extraSubscriptions.filter(function(e) {
+            return names.indexOf(e.name) < 0
+        }))
     }
 
     function subsTotal() {
@@ -199,6 +205,7 @@ PlasmoidItem {
                     root.liveStale = true
                 }
                 root.subscription = j.subscription
+                root.subscriptionOpenai = j.subscriptionOpenai || null
                 root.sessionModels = j.sessionModels || []
                 root.history = j.history || []
                 root.spark = j.spark || []

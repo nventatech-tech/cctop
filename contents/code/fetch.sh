@@ -87,6 +87,25 @@ case "$tier" in
   *pro*)     sub='{"name":"Claude Pro","price":20,"currency":"US$"}' ;;
 esac
 
+# ----------------- chatgpt subscription (Codex CLI local login) -----------------
+# The Codex CLI keeps the OpenAI id_token (JWT) in ~/.codex/auth.json when
+# logged in with a ChatGPT account; its payload carries chatgpt_plan_type.
+# Decoded locally (base64), nothing leaves the machine.
+subOa='null'
+CODEX_AUTH="$HOME/.codex/auth.json"
+if [ -s "$CODEX_AUTH" ]; then
+  payload=$(jq -r '.tokens.id_token // empty' "$CODEX_AUTH" 2>/dev/null | cut -d. -f2 | tr '_-' '/+')
+  while [ -n "$payload" ] && [ $(( ${#payload} % 4 )) -ne 0 ]; do payload="$payload="; done
+  plan=$(printf '%s' "$payload" | base64 -d 2>/dev/null \
+    | jq -r '."https://api.openai.com/auth".chatgpt_plan_type // empty' 2>/dev/null)
+  case "$plan" in
+    pro)      subOa='{"name":"ChatGPT Pro","price":200,"currency":"US$"}' ;;
+    plus)     subOa='{"name":"ChatGPT Plus","price":20,"currency":"US$"}' ;;
+    team)     subOa='{"name":"ChatGPT Team","price":25,"currency":"US$"}' ;;
+    business) subOa='{"name":"ChatGPT Business","price":25,"currency":"US$"}' ;;
+  esac
+fi
+
 # ----------------- openai (Codex CLI local session logs) -----------------
 # ~/.codex/sessions/**/rollout-*.jsonl: one token_count event per turn with
 # last_token_usage {input_tokens, cached_input_tokens, output_tokens}.
@@ -139,7 +158,7 @@ hist=$($CCU session --json 2>/dev/null | jq -c '
 # ----------------- output -----------------
 jq -cn --argjson c "$claude" --argjson oa "$openai" --argjson ge "$gemini" \
       --argjson b "$block" --argjson live "$live" --argjson sub "$sub" \
-      --argjson h "$hist" --argjson sp "$spark" '
+      --argjson subOa "$subOa" --argjson h "$hist" --argjson sp "$spark" '
   ([$c] + [$oa, $ge | select(. != null)]) as $ps | {
     providers: $ps,
     totalMonth: ($ps | map(.costMonth) | add),
@@ -148,6 +167,7 @@ jq -cn --argjson c "$claude" --argjson oa "$openai" --argjson ge "$gemini" \
     sessionModels: (($b.blocks // []) | (.[0].models // [])),
     live: $live,
     subscription: $sub,
+    subscriptionOpenai: $subOa,
     history: $h,
     spark: $sp
   }'

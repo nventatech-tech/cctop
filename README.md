@@ -1,10 +1,15 @@
 # cctop
 
+[![KDE Store](https://img.shields.io/badge/KDE_Store-cctop-1d99f3?logo=kde&logoColor=white)](https://store.kde.org/browse?search=cctop)
+[![Version](https://img.shields.io/github/v/release/nventatech-tech/cctop?label=version&color=54a3d8)](https://github.com/nventatech-tech/cctop/releases)
+[![Plasma 6](https://img.shields.io/badge/Plasma-6-54a3d8?logo=kde&logoColor=white)](https://kde.org/plasma-desktop/)
+[![License](https://img.shields.io/badge/license-GPL--3.0-green)](LICENSE)
+
 AI usage and cost monitor for the KDE Plasma panel. Shows live Claude Code
 session limits, monthly spend per provider and your subscriptions. All data
 is local: no accounts, no API keys, no telemetry.
 
-## Features
+## ✨ Features
 
 - **Panel indicator** — live Claude session usage % (green → yellow → red),
   today's spend or subscriptions total (configurable)
@@ -32,7 +37,7 @@ is local: no accounts, no API keys, no telemetry.
 - **Scroll on the panel widget** to cycle session % / spend today / subscriptions
 - **Languages**: English, Português (Brasil), Español
 
-### Providers
+### 🔌 Providers
 
 | Provider | Source |
 |---|---|
@@ -42,14 +47,14 @@ is local: no accounts, no API keys, no telemetry.
 
 Providers appear automatically when their CLI is used on the machine.
 
-## Requirements
+## 📋 Requirements
 
 - KDE Plasma 6
 - `jq`, `curl`
 - Node.js **or** Bun (used to run [ccusage](https://github.com/ryoppippi/ccusage))
 - [Claude Code](https://claude.com/claude-code) for the Claude data
 
-## Install
+## 📦 Install
 
 From the KDE Store: right-click your panel → *Add Widgets* → *Get New Widgets* → search **cctop**.
 
@@ -62,13 +67,13 @@ kpackagetool6 --type Plasma/Applet --install cctop
 
 Then add the **cctop** widget to your panel.
 
-## Configuration
+## ⚙️ Configuration
 
 Right-click the widget → *Configure cctop*: language, what the panel label
 shows, notification threshold, monthly budget, extra subscriptions and
 refresh interval.
 
-## Morning summary (optional)
+## 🌅 Morning summary (optional)
 
 `contents/code/summary.sh` sends a desktop notification with yesterday's
 spend, the 7-day total and your weekly limit usage. To get it every morning,
@@ -101,14 +106,14 @@ WantedBy=timers.target
 systemctl --user enable --now cctop-summary.timer
 ```
 
-## Donate
+## ❤️ Donate
 
-Support development: the heart button in the widget,
-[this PayPal link](https://www.paypal.com/donate/?business=SR28XBBCYSPHE&no_recurring=0&item_name=Help+me+buy+a+coffee.&currency_code=USD)
-or the QR code:
+Support development — the heart button in the widget, the button below or the QR code:
+
+[![Donate — PayPal](https://img.shields.io/badge/PayPal-Donate-00457C?style=for-the-badge&logo=paypal&logoColor=white)](https://www.paypal.com/donate/?business=SR28XBBCYSPHE&no_recurring=0&item_name=Help+me+buy+a+coffee.&currency_code=USD)
 
 <img src="contents/images/donate-qr.png" width="140" alt="PayPal donation QR code">
 
-## License
+## 📄 License
 
 [GPL-3.0-or-later](LICENSE) — © 2026 NventaTech

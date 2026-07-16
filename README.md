@@ -5,6 +5,8 @@
 [![Plasma 6](https://img.shields.io/badge/Plasma-6-54a3d8?logo=kde&logoColor=white)](https://kde.org/plasma-desktop/)
 [![License](https://img.shields.io/badge/license-GPL--3.0-green)](LICENSE)
 
+<img src="demo.png" width="380" alt="cctop widget">
+
 AI usage and cost monitor for the KDE Plasma panel. Shows live Claude Code
 session limits, monthly spend per provider and your subscriptions. All data
 is local: no accounts, no API keys, no telemetry.

@@ -40,7 +40,9 @@ PlasmoidItem {
             resets: "resets", inWord: "in", thisWindow: "this window",
             noSession: "no live data", subs: "SUBSCRIPTIONS", subsTotal: "Total",
             perMonth: "/mo", tipMonth: "this month", tipSession: "session",
-            hist: "RECENT SESSIONS", budget: "budget"
+            hist: "RECENT SESSIONS", budget: "budget", projected: "projected",
+            topProjects: "TOP PROJECTS", prevMonth: "last month",
+            byModel: "BY MODEL"
         },
         pt_BR: {
             loading: "carregando…", month: "este mês", today: "hoje",
@@ -48,7 +50,9 @@ PlasmoidItem {
             resets: "reseta", inWord: "em", thisWindow: "nesta janela",
             noSession: "sem dados ao vivo", subs: "ASSINATURAS", subsTotal: "Total",
             perMonth: "/mês", tipMonth: "neste mês", tipSession: "sessão",
-            hist: "SESSÕES RECENTES", budget: "orçamento"
+            hist: "SESSÕES RECENTES", budget: "orçamento", projected: "projeção",
+            topProjects: "TOP PROJETOS", prevMonth: "mês passado",
+            byModel: "POR MODELO"
         },
         es: {
             loading: "cargando…", month: "este mes", today: "hoy",
@@ -56,7 +60,9 @@ PlasmoidItem {
             resets: "se reinicia", inWord: "en", thisWindow: "en esta ventana",
             noSession: "sin datos en vivo", subs: "SUSCRIPCIONES", subsTotal: "Total",
             perMonth: "/mes", tipMonth: "en este mes", tipSession: "sesión",
-            hist: "SESIONES RECIENTES", budget: "presupuesto"
+            hist: "SESIONES RECIENTES", budget: "presupuesto", projected: "proyección",
+            topProjects: "TOP PROYECTOS", prevMonth: "mes pasado",
+            byModel: "POR MODELO"
         }
     })
     readonly property var localeNames: ({ en: "en_US", pt_BR: "pt_BR", es: "es_ES" })
@@ -73,12 +79,22 @@ PlasmoidItem {
     property var sessionModels: []
     property var history: []
     property var spark: []
+    property var projects: []
+    property real prevMonth: 0
+    property var models: []
     property bool showHistory: false
+    property bool showProjects: false
     property bool liveStale: false
     property bool notified: false
     property bool budgetNotified: false
     readonly property int budgetM: Plasmoid.configuration.budgetMonthly
     readonly property real budgetPct: budgetM > 0 ? costMonth / budgetM * 100 : 0
+    // end-of-month run rate from month-to-date spend
+    readonly property real projectedMonth: {
+        var d = new Date(now)
+        var daysInMonth = new Date(d.getFullYear(), d.getMonth() + 1, 0).getDate()
+        return costMonth / d.getDate() * daysInMonth
+    }
     property bool loaded: false
     property double now: Date.now()
 
@@ -123,11 +139,22 @@ PlasmoidItem {
         return h > 0 ? h + "h " + m + "m" : m + "m"
     }
 
+    // user-defined subscriptions from settings, one per line "Name: price"
+    function extraSubscriptions() {
+        var lines = (Plasmoid.configuration.extraSubscriptions || "").split("\n")
+        var list = []
+        for (var i = 0; i < lines.length; i++) {
+            var m = lines[i].match(/^\s*(.+?)\s*:\s*(\d+(?:\.\d+)?)\s*$/)
+            if (m) list.push({ name: m[1], price: Number(m[2]), currency: "US$" })
+        }
+        return list
+    }
+
     function allSubscriptions() {
         var list = []
         if (subscription) list.push(subscription)
         if (subscriptionOpenai) list.push(subscriptionOpenai)
-        return list
+        return list.concat(extraSubscriptions())
     }
 
     function subsTotal() {
@@ -194,6 +221,9 @@ PlasmoidItem {
                 root.sessionModels = j.sessionModels || []
                 root.history = j.history || []
                 root.spark = j.spark || []
+                root.projects = (j.projects || []).filter(function(p) { return p.cost > 0 })
+                root.prevMonth = j.prevMonth || 0
+                root.models = (j.models || []).filter(function(m) { return m.cost > 0 })
                 root.loaded = true
                 root.checkNotify()
                 root.checkBudget()
@@ -313,6 +343,12 @@ PlasmoidItem {
                     onClicked: Plasmoid.configuration.privacy = checked
                 }
                 PC3.ToolButton {
+                    icon.name: "folder-open-symbolic"
+                    checkable: true
+                    checked: root.showProjects
+                    onClicked: root.showProjects = !root.showProjects
+                }
+                PC3.ToolButton {
                     icon.name: "view-history"
                     checkable: true
                     checked: root.showHistory
@@ -331,10 +367,39 @@ PlasmoidItem {
                     font.pixelSize: Kirigami.Units.gridUnit * 2.4
                     font.bold: true
                 }
-                PC3.Label {
-                    text: root.tr("month") + "  ·  " + root.tr("today") + " " + root.money(root.costToday)
-                    color: root.mutedColor
-                    font.pixelSize: fullRep.smallSize
+                RowLayout {
+                    spacing: 0
+                    PC3.Label {
+                        text: root.tr("month") + "  ·  " + root.tr("today") + " " + root.money(root.costToday)
+                        color: root.mutedColor
+                        font.pixelSize: fullRep.smallSize
+                    }
+                    PC3.Label {
+                        visible: root.loaded && root.costMonth > 0
+                        text: "  ·  " + root.tr("projected") + " ≈ " + root.money(root.projectedMonth)
+                        color: root.budgetM > 0
+                            ? root.sevColor(root.projectedMonth / root.budgetM * 100)
+                            : root.mutedColor
+                        font.pixelSize: fullRep.smallSize
+                    }
+                }
+
+                // previous month total + projected delta against it
+                RowLayout {
+                    spacing: 0
+                    visible: root.loaded && root.prevMonth > 0
+                    PC3.Label {
+                        text: root.tr("prevMonth") + " " + root.money(root.prevMonth)
+                        color: root.mutedColor
+                        font.pixelSize: fullRep.smallSize
+                    }
+                    PC3.Label {
+                        readonly property real delta: (root.projectedMonth - root.prevMonth) / root.prevMonth * 100
+                        visible: root.costMonth > 0 && !root.hideValues
+                        text: "  ·  ≈ " + (delta >= 0 ? "+" : "−") + Math.abs(Math.round(delta)) + "%"
+                        color: delta > 0 ? root.sevColor(100) : root.sevColor(0)
+                        font.pixelSize: fullRep.smallSize
+                    }
                 }
 
                 // monthly budget progress (only when a budget is configured)
@@ -444,6 +509,90 @@ PlasmoidItem {
                                     font.pixelSize: fullRep.microSize
                                     Layout.alignment: Qt.AlignHCenter
                                 }
+                            }
+                        }
+                    }
+                }
+            }
+
+            // ---------- top projects this month (toggled by the folder button) ----------
+            Rectangle {
+                Layout.fillWidth: true
+                visible: root.showProjects && root.projects.length > 0
+                radius: 12
+                color: root.surfaceColor
+                border.color: root.borderColor
+                border.width: 1
+                implicitHeight: projCol.implicitHeight + Kirigami.Units.gridUnit * 1.2
+
+                ColumnLayout {
+                    id: projCol
+                    anchors.fill: parent
+                    anchors.margins: Kirigami.Units.gridUnit * 0.65
+                    spacing: Kirigami.Units.smallSpacing * 1.5
+
+                    PC3.Label {
+                        text: root.tr("topProjects")
+                        color: root.mutedColor
+                        font.pixelSize: fullRep.microSize
+                        font.letterSpacing: 0.5
+                    }
+                    Repeater {
+                        model: root.projects
+                        RowLayout {
+                            Layout.fillWidth: true
+                            PC3.Label {
+                                text: modelData.name
+                                color: root.textColor
+                                font.pixelSize: fullRep.smallSize
+                                elide: Text.ElideRight
+                                Layout.fillWidth: true
+                            }
+                            PC3.Label {
+                                text: root.costMonth > 0
+                                    ? Math.round(modelData.cost / root.costMonth * 100) + "%"
+                                    : ""
+                                color: root.mutedColor
+                                font.pixelSize: fullRep.microSize
+                            }
+                            PC3.Label {
+                                text: root.money(modelData.cost)
+                                color: root.mutedColor
+                                font.pixelSize: fullRep.smallSize
+                            }
+                        }
+                    }
+
+                    PC3.Label {
+                        visible: root.models.length > 0
+                        Layout.topMargin: Kirigami.Units.smallSpacing
+                        text: root.tr("byModel")
+                        color: root.mutedColor
+                        font.pixelSize: fullRep.microSize
+                        font.letterSpacing: 0.5
+                    }
+                    Repeater {
+                        model: root.models
+                        RowLayout {
+                            Layout.fillWidth: true
+                            PC3.Label {
+                                text: root.prettyModel(modelData.name)
+                                color: root.textColor
+                                font.pixelSize: fullRep.smallSize
+                                elide: Text.ElideRight
+                                Layout.fillWidth: true
+                            }
+                            PC3.Label {
+                                text: root.costMonth > 0
+                                    ? Math.round(modelData.cost / root.costMonth * 100) + "%"
+                                    : ""
+                                color: root.mutedColor
+                                font.pixelSize: fullRep.microSize
+                            }
+                            PC3.Label {
+                                text: root.money(modelData.cost)
+                                color: root.mutedColor
+                                font.pixelSize: fullRep.smallSize
                             }
                         }
                     }

@@ -16,6 +16,19 @@ CLAUDE_CFG="$HOME/.claude.json"
 # ccusage runner: bun if available, plain node otherwise
 if command -v bunx >/dev/null 2>&1; then CCU="bunx ccusage"; else CCU="npx -y ccusage"; fi
 
+# cached <name> <ttl-seconds> <command...> — every ccusage run reparses all
+# JSONL logs (~1s CPU), so slow-moving data is reused from tmpfs for its TTL
+CACHE_DIR="${XDG_RUNTIME_DIR:-/tmp}/cctop-cache"
+mkdir -p "$CACHE_DIR"
+cached() {
+  local f="$CACHE_DIR/$1.json" ttl="$2" age=999999 out; shift 2
+  [ -s "$f" ] && age=$(( $(date +%s) - $(stat -c %Y "$f") ))
+  if [ "$age" -lt "$ttl" ]; then cat "$f"; return; fi
+  out=$("$@" 2>/dev/null)
+  if [ -n "$out" ]; then printf '%s' "$out" > "$f"; printf '%s' "$out"
+  else [ -s "$f" ] && cat "$f"; fi
+}
+
 # ----------------- date windows (current month + last 7 days) -----------------
 since=$(date +%Y%m01)
 today=$(date +%Y-%m-%d)
@@ -149,8 +162,34 @@ if [ -s "$HOME/.gemini/telemetry.log" ]; then
   fi
 fi
 
+# ----------------- top projects this month -----------------
+# per-day costs keyed by flattened project path; worktree sessions fold into
+# their parent project, label is the last dash segment of the path
+projects=$(cached "projects-$since" 900 $CCU claude daily --json --instances --since "$since" | jq -c --arg ms "$monthStart" '
+  [ (.projects // {}) | to_entries[]
+    | {p: (.key | sub("--claude-worktrees-.*$"; "") | split("-") | last),
+       c: ([.value[] | select(.date >= $ms) | .totalCost] | add // 0)} ]
+  | group_by(.p) | map({name: .[0].p, cost: (map(.c) | add)})
+  | sort_by(-.cost) | .[0:3]')
+[ -z "$projects" ] && projects='[]'
+
+# ----------------- cost by model this month (from the daily payload) -----------------
+models=$(jq -cn --argjson d "$daily" --arg ms "$monthStart" '
+  [ ($d.daily // [])[] | select(.period >= $ms) | (.modelBreakdowns // [])[]
+    | {name: .modelName, cost: .cost} ]
+  | group_by(.name) | map({name: .[0].name, cost: (map(.cost) | add)})
+  | sort_by(-.cost) | .[0:4]')
+[ -z "$models" ] && models='[]'
+
+# ----------------- previous month total (hero comparison) -----------------
+prevSince=$(date -d 'last month' +%Y%m01)
+prevKey=$(date -d 'last month' +%Y-%m)
+prevMonth=$(cached "monthly-$prevKey" 43200 $CCU monthly --json --since "$prevSince" | jq -c --arg m "$prevKey" \
+  '[(.monthly // [])[] | select((.month // .period) == $m) | .totalCost] | (add // 0)')
+[ -z "$prevMonth" ] && prevMonth=0
+
 # ----------------- session history (local logs) -----------------
-hist=$($CCU session --json 2>/dev/null | jq -c '
+hist=$(cached history 300 $CCU session --json | jq -c '
   [ (.session // []) | sort_by(.metadata.lastActivity) | reverse | .[0:8][]
     | { last: .metadata.lastActivity, cost: .totalCost, models: (.modelsUsed // []) } ]')
 [ -z "$hist" ] && hist='[]'
@@ -158,7 +197,8 @@ hist=$($CCU session --json 2>/dev/null | jq -c '
 # ----------------- output -----------------
 jq -cn --argjson c "$claude" --argjson oa "$openai" --argjson ge "$gemini" \
       --argjson b "$block" --argjson live "$live" --argjson sub "$sub" \
-      --argjson subOa "$subOa" --argjson h "$hist" --argjson sp "$spark" '
+      --argjson subOa "$subOa" --argjson h "$hist" --argjson sp "$spark" \
+      --argjson pr "$projects" --argjson pm "$prevMonth" --argjson mo "$models" '
   ([$c] + [$oa, $ge | select(. != null)]) as $ps | {
     providers: $ps,
     totalMonth: ($ps | map(.costMonth) | add),
@@ -169,5 +209,8 @@ jq -cn --argjson c "$claude" --argjson oa "$openai" --argjson ge "$gemini" \
     subscription: $sub,
     subscriptionOpenai: $subOa,
     history: $h,
-    spark: $sp
+    spark: $sp,
+    projects: $pr,
+    prevMonth: $pm,
+    models: $mo
   }'

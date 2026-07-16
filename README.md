@@ -10,6 +10,11 @@ no API keys, no telemetry.
 - **Panel indicator** — live Claude session usage % (green → yellow → red),
   today's spend or subscriptions total (configurable)
 - **Monthly spend** per provider with stacked bar and legend
+- **End-of-month projection** — run rate from the month so far, tinted by how
+  it compares to your budget
+- **Last month comparison** — previous month total and the projected delta
+- **Top projects & by-model breakdown** — where the money went this month,
+  behind the folder button in the popup header
 - **Last 7 days** bar chart
 - **Live limits** — current 5h session (%, reset time, model in use), weekly
   all-models and weekly top-model limits, straight from the same endpoint the
@@ -19,6 +24,8 @@ no API keys, no telemetry.
 - **Subscription auto-detection** — your Claude plan (Pro / Max 5x / Max 20x)
   and your ChatGPT plan (Plus / Pro / Team, from the Codex CLI login) are read
   from local CLI files
+- **Extra subscriptions** — add any other fixed AI cost in the settings, one
+  per line (`Cursor Pro: 20`)
 - **Monthly budget** — optional limit with progress bar and a notification
   when the spend crosses it
 - **Privacy mode** — the eye button masks every money value (panel included)
@@ -59,7 +66,41 @@ Then add the **cctop** widget to your panel.
 ## Configuration
 
 Right-click the widget → *Configure cctop*: language, what the panel label
-shows, notification threshold, monthly budget and refresh interval.
+shows, notification threshold, monthly budget, extra subscriptions and
+refresh interval.
+
+## Morning summary (optional)
+
+`contents/code/summary.sh` sends a desktop notification with yesterday's
+spend, the 7-day total and your weekly limit usage. To get it every morning,
+create a systemd user timer:
+
+```ini
+# ~/.config/systemd/user/cctop-summary.service
+[Unit]
+Description=cctop morning AI cost summary
+
+[Service]
+Type=oneshot
+ExecStart=%h/.local/share/plasma/plasmoids/com.nventatech.cctop/contents/code/summary.sh
+```
+
+```ini
+# ~/.config/systemd/user/cctop-summary.timer
+[Unit]
+Description=cctop morning AI cost summary at 08:00
+
+[Timer]
+OnCalendar=*-*-* 08:00
+Persistent=true
+
+[Install]
+WantedBy=timers.target
+```
+
+```sh
+systemctl --user enable --now cctop-summary.timer
+```
 
 ## Donate
 

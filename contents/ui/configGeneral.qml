@@ -11,6 +11,7 @@ Kirigami.FormLayout {
     property int cfg_notifyThreshold
     property int cfg_refreshInterval
     property int cfg_budgetMonthly
+    property string cfg_extraSubscriptions
 
     // defaults mirrored from config/main.xml (silences plasmashell warnings)
     property string cfg_languageDefault: "en"
@@ -18,6 +19,7 @@ Kirigami.FormLayout {
     property int cfg_notifyThresholdDefault: 85
     property int cfg_refreshIntervalDefault: 60
     property int cfg_budgetMonthlyDefault: 0
+    property string cfg_extraSubscriptionsDefault: ""
 
     readonly property string donateUrl: "https://www.paypal.com/donate/?business=SR28XBBCYSPHE&no_recurring=0&item_name=Help+me+buy+a+coffee.&currency_code=USD"
 
@@ -75,6 +77,15 @@ Kirigami.FormLayout {
         stepSize: 30
         value: page.cfg_refreshInterval
         onValueModified: page.cfg_refreshInterval = value
+    }
+
+    QQC2.TextArea {
+        Kirigami.FormData.label: "Extra subscriptions:"
+        implicitWidth: Kirigami.Units.gridUnit * 14
+        implicitHeight: Kirigami.Units.gridUnit * 4
+        placeholderText: "One per line, e.g.\nCursor Pro: 20"
+        text: page.cfg_extraSubscriptions
+        onTextChanged: page.cfg_extraSubscriptions = text
     }
 
     Kirigami.Separator { Kirigami.FormData.isSection: true }

@@ -1,9 +1,8 @@
 # cctop
 
-AI usage and cost monitor for the KDE Plasma panel. Tracks what your AI coding
-tools are really costing you — live Claude Code session limits, monthly spend
-per provider and your subscriptions — with **100% local data**: no accounts,
-no API keys, no telemetry.
+AI usage and cost monitor for the KDE Plasma panel. Shows live Claude Code
+session limits, monthly spend per provider and your subscriptions. All data
+is local: no accounts, no API keys, no telemetry.
 
 ## Features
 
@@ -104,8 +103,8 @@ systemctl --user enable --now cctop-summary.timer
 
 ## Donate
 
-If cctop is useful to you, you can support development — the ❤ button in the
-widget, [this PayPal link](https://www.paypal.com/donate/?business=SR28XBBCYSPHE&no_recurring=0&item_name=Help+me+buy+a+coffee.&currency_code=USD)
+Support development: the heart button in the widget,
+[this PayPal link](https://www.paypal.com/donate/?business=SR28XBBCYSPHE&no_recurring=0&item_name=Help+me+buy+a+coffee.&currency_code=USD)
 or the QR code:
 
 <img src="contents/images/donate-qr.png" width="140" alt="PayPal donation QR code">

@@ -108,7 +108,7 @@ systemctl --user enable --now cctop-summary.timer
 
 ## ❤️ Donate
 
-Support development — the heart button in the widget, the button below or the QR code:
+If cctop is useful to you, you can support it through the heart button in the widget, the PayPal button below or the QR code:
 
 [![Donate — PayPal](https://img.shields.io/badge/PayPal-Donate-00457C?style=for-the-badge&logo=paypal&logoColor=white)](https://www.paypal.com/donate/?business=SR28XBBCYSPHE&no_recurring=0&item_name=Help+me+buy+a+coffee.&currency_code=USD)
 

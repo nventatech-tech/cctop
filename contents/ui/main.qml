@@ -86,6 +86,8 @@ PlasmoidItem {
     property bool showProjects: false
     property bool liveStale: false
     property bool notified: false
+    property bool notifiedWeekly: false
+    property bool notifiedWeeklyModel: false
     property bool budgetNotified: false
     readonly property int budgetM: Plasmoid.configuration.budgetMonthly
     readonly property real budgetPct: budgetM > 0 ? costMonth / budgetM * 100 : 0
@@ -185,6 +187,26 @@ PlasmoidItem {
         notifier.connectSource("notify-send -a cctop -i office-chart-bar cctop \"" + msg + "\"")
     }
 
+    // one notification per weekly window (all-models and top-model each)
+    function checkWeeklyNotify() {
+        var th = Plasmoid.configuration.notifyThresholdWeekly
+        if (th <= 0 || !live || liveStale) return
+        var checks = [
+            { data: live.weekly, label: tr("weeklyAll"), flag: "notifiedWeekly" },
+            { data: live.weekly_model, label: (sessionModel() || tr("weeklyModel")).toUpperCase(), flag: "notifiedWeeklyModel" }
+        ]
+        for (var i = 0; i < checks.length; i++) {
+            var c = checks[i]
+            if (!c.data) continue
+            if (c.data.pct < th) { root[c.flag] = false; continue }
+            if (root[c.flag]) continue
+            root[c.flag] = true
+            var msg = c.label + " " + c.data.pct + "% · " + tr("resets") + " "
+                    + new Date(c.data.resets_at).toLocaleString(Qt.locale(localeNames[lang] || "en_US"), "ddd HH:mm")
+            notifier.connectSource("notify-send -a cctop -i office-chart-bar cctop \"" + msg + "\"")
+        }
+    }
+
     // one notification per month when the spend crosses the budget
     function checkBudget() {
         var b = Plasmoid.configuration.budgetMonthly
@@ -227,6 +249,7 @@ PlasmoidItem {
                 root.models = (j.models || []).filter(function(m) { return m.cost > 0 })
                 root.loaded = true
                 root.checkNotify()
+                root.checkWeeklyNotify()
                 root.checkBudget()
             } catch (e) { /* keep last values */ }
         }

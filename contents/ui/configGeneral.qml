@@ -9,6 +9,7 @@ Kirigami.FormLayout {
     property string cfg_language
     property string cfg_panelDisplay
     property int cfg_notifyThreshold
+    property int cfg_notifyThresholdWeekly
     property int cfg_refreshInterval
     property int cfg_budgetMonthly
     property string cfg_extraSubscriptions
@@ -17,6 +18,7 @@ Kirigami.FormLayout {
     property string cfg_languageDefault: "en"
     property string cfg_panelDisplayDefault: "session"
     property int cfg_notifyThresholdDefault: 85
+    property int cfg_notifyThresholdWeeklyDefault: 85
     property int cfg_refreshIntervalDefault: 60
     property int cfg_budgetMonthlyDefault: 0
     property string cfg_extraSubscriptionsDefault: ""
@@ -60,6 +62,15 @@ Kirigami.FormLayout {
         stepSize: 5
         value: page.cfg_notifyThreshold
         onValueModified: page.cfg_notifyThreshold = value
+    }
+
+    QQC2.SpinBox {
+        Kirigami.FormData.label: "Notify at weekly % (0 = off):"
+        from: 0
+        to: 100
+        stepSize: 5
+        value: page.cfg_notifyThresholdWeekly
+        onValueModified: page.cfg_notifyThresholdWeekly = value
     }
 
     QQC2.SpinBox {

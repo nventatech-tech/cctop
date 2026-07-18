@@ -188,6 +188,14 @@ prevMonth=$(cached "monthly-$prevKey" 43200 $CCU monthly --json --since "$prevSi
   '[(.monthly // [])[] | select((.month // .period) == $m) | .totalCost] | (add // 0)')
 [ -z "$prevMonth" ] && prevMonth=0
 
+# ----------------- monthly history (last 6 months) -----------------
+# current month lags up to the TTL here; the UI overwrites the last bar with
+# the live month total so it always matches the hero number
+sixSince=$(date -d '5 months ago' +%Y%m01)
+months=$(cached "months-$(date +%Y-%m)" 3600 $CCU monthly --json --since "$sixSince" | jq -c '
+  [ (.monthly // [])[] | {m: (.month // .period), c: .totalCost} ] | sort_by(.m) | .[-6:]')
+[ -z "$months" ] && months='[]'
+
 # ----------------- session history (local logs) -----------------
 hist=$(cached history 300 $CCU session --json | jq -c '
   [ (.session // []) | sort_by(.metadata.lastActivity) | reverse | .[0:8][]
@@ -198,7 +206,8 @@ hist=$(cached history 300 $CCU session --json | jq -c '
 jq -cn --argjson c "$claude" --argjson oa "$openai" --argjson ge "$gemini" \
       --argjson b "$block" --argjson live "$live" --argjson sub "$sub" \
       --argjson subOa "$subOa" --argjson h "$hist" --argjson sp "$spark" \
-      --argjson pr "$projects" --argjson pm "$prevMonth" --argjson mo "$models" '
+      --argjson pr "$projects" --argjson pm "$prevMonth" --argjson mo "$models" \
+      --argjson mh "$months" '
   ([$c] + [$oa, $ge | select(. != null)]) as $ps | {
     providers: $ps,
     totalMonth: ($ps | map(.costMonth) | add),
@@ -212,5 +221,6 @@ jq -cn --argjson c "$claude" --argjson oa "$openai" --argjson ge "$gemini" \
     spark: $sp,
     projects: $pr,
     prevMonth: $pm,
-    models: $mo
+    models: $mo,
+    months: $mh
   }'

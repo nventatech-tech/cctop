@@ -42,7 +42,7 @@ PlasmoidItem {
             perMonth: "/mo", tipMonth: "this month", tipSession: "session",
             hist: "RECENT SESSIONS", budget: "budget", projected: "projected",
             topProjects: "TOP PROJECTS", prevMonth: "last month",
-            byModel: "BY MODEL"
+            byModel: "BY MODEL", months6: "LAST 6 MONTHS"
         },
         pt_BR: {
             loading: "carregando…", month: "este mês", today: "hoje",
@@ -52,7 +52,7 @@ PlasmoidItem {
             perMonth: "/mês", tipMonth: "neste mês", tipSession: "sessão",
             hist: "SESSÕES RECENTES", budget: "orçamento", projected: "projeção",
             topProjects: "TOP PROJETOS", prevMonth: "mês passado",
-            byModel: "POR MODELO"
+            byModel: "POR MODELO", months6: "ÚLTIMOS 6 MESES"
         },
         es: {
             loading: "cargando…", month: "este mes", today: "hoy",
@@ -62,7 +62,7 @@ PlasmoidItem {
             perMonth: "/mes", tipMonth: "en este mes", tipSession: "sesión",
             hist: "SESIONES RECIENTES", budget: "presupuesto", projected: "proyección",
             topProjects: "TOP PROYECTOS", prevMonth: "mes pasado",
-            byModel: "POR MODELO"
+            byModel: "POR MODELO", months6: "ÚLTIMOS 6 MESES"
         }
     })
     readonly property var localeNames: ({ en: "en_US", pt_BR: "pt_BR", es: "es_ES" })
@@ -80,6 +80,7 @@ PlasmoidItem {
     property var history: []
     property var spark: []
     property var projects: []
+    property var months: []
     property real prevMonth: 0
     property var models: []
     property bool showHistory: false
@@ -245,6 +246,11 @@ PlasmoidItem {
                 root.history = j.history || []
                 root.spark = j.spark || []
                 root.projects = (j.projects || []).filter(function(p) { return p.cost > 0 })
+                // last bar = live claude month total (the collector cache lags)
+                var mh = j.months || []
+                var claude = (j.providers || []).filter(function(p) { return p.id === "claude" })[0]
+                if (mh.length > 0 && claude) mh[mh.length - 1].c = claude.costMonth
+                root.months = mh
                 root.prevMonth = j.prevMonth || 0
                 root.models = (j.models || []).filter(function(m) { return m.cost > 0 })
                 root.loaded = true
@@ -741,6 +747,73 @@ PlasmoidItem {
                                 text: root.money(modelData.cost)
                                 color: root.textColor
                                 font.pixelSize: fullRep.microSize
+                            }
+                        }
+                    }
+                }
+            }
+
+            // ---------- monthly history (toggled by the history button) ----------
+            Rectangle {
+                Layout.fillWidth: true
+                visible: root.showHistory && root.months.length > 1
+                radius: 12
+                color: root.surfaceColor
+                border.color: root.borderColor
+                border.width: 1
+                implicitHeight: monthsCol.implicitHeight + Kirigami.Units.gridUnit * 1.2
+
+                ColumnLayout {
+                    id: monthsCol
+                    anchors.fill: parent
+                    anchors.margins: Kirigami.Units.gridUnit * 0.65
+                    spacing: Kirigami.Units.smallSpacing * 1.5
+
+                    PC3.Label {
+                        text: root.tr("months6")
+                        color: root.mutedColor
+                        font.pixelSize: fullRep.microSize
+                        font.letterSpacing: 0.5
+                    }
+                    Item {
+                        id: monthsBox
+                        Layout.fillWidth: true
+                        implicitHeight: Kirigami.Units.gridUnit * 4
+                        property real peak: Math.max.apply(null, root.months.map(function(m) { return m.c }).concat([0.01]))
+
+                        RowLayout {
+                            anchors.fill: parent
+                            spacing: Kirigami.Units.smallSpacing
+                            Repeater {
+                                model: root.months
+                                ColumnLayout {
+                                    Layout.fillWidth: true
+                                    spacing: 2
+                                    PC3.Label {
+                                        text: root.money(modelData.c)
+                                        color: root.mutedColor
+                                        font.pixelSize: fullRep.microSize
+                                        Layout.alignment: Qt.AlignHCenter
+                                    }
+                                    Item {
+                                        Layout.fillWidth: true
+                                        Layout.fillHeight: true
+                                        Rectangle {
+                                            anchors.bottom: parent.bottom
+                                            width: parent.width
+                                            height: Math.max(3, parent.height * (modelData.c / monthsBox.peak))
+                                            radius: 2
+                                            color: root.accentColor
+                                            opacity: index === root.months.length - 1 ? 1 : 0.5
+                                        }
+                                    }
+                                    PC3.Label {
+                                        text: new Date(modelData.m + "-15T12:00:00").toLocaleDateString(Qt.locale(root.localeNames[root.lang] || "en_US"), "MMM").slice(0, 3)
+                                        color: root.mutedColor
+                                        font.pixelSize: fullRep.microSize
+                                        Layout.alignment: Qt.AlignHCenter
+                                    }
+                                }
                             }
                         }
                     }

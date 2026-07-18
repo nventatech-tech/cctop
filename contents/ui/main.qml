@@ -302,14 +302,6 @@ PlasmoidItem {
             id: compactRow
             anchors.centerIn: parent
             spacing: Kirigami.Units.smallSpacing
-            Kirigami.Icon {
-                source: Qt.resolvedUrl("../icons/cctop-symbolic.svg")
-                width: label.implicitHeight
-                height: width
-                anchors.verticalCenter: parent.verticalCenter
-                isMask: true
-                color: label.color
-            }
             PC3.Label {
                 id: label
                 anchors.verticalCenter: parent.verticalCenter
@@ -326,7 +318,7 @@ PlasmoidItem {
     fullRepresentation: Item {
         id: fullRep
         Layout.preferredWidth: Kirigami.Units.gridUnit * 23
-        Layout.preferredHeight: column.implicitHeight + Kirigami.Units.gridUnit * 2
+        Layout.preferredHeight: column.implicitHeight + Kirigami.Units.gridUnit + column.anchors.bottomMargin
         Layout.minimumWidth: Layout.preferredWidth
         Layout.minimumHeight: Layout.preferredHeight
         // keeps the dialog from staying tall after the history card collapses
@@ -342,6 +334,9 @@ PlasmoidItem {
             id: column
             anchors.fill: parent
             anchors.margins: Kirigami.Units.gridUnit
+            // footer ToolButtons carry ~7px of internal bottom padding, so the
+            // visual gap below them matches the top margin with less real margin
+            anchors.bottomMargin: Math.round(Kirigami.Units.gridUnit * 0.6)
             spacing: Math.round(Kirigami.Units.gridUnit * 0.55)
 
             // ---------- header ----------
@@ -969,10 +964,6 @@ PlasmoidItem {
                     onClicked: Plasmoid.internalAction("configure").trigger()
                 }
             }
-
-            // any surplus height goes below the cards, never between them
-            // (e.g. when the dialog is restored bigger than the content)
-            Item { Layout.fillHeight: true }
         }
     }
 }

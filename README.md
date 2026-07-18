@@ -21,7 +21,7 @@ is local: no accounts, no API keys, no telemetry.
 - **Last month comparison** — previous month total and the projected delta
 - **Top projects & by-model breakdown** — where the money went this month,
   behind the folder button in the popup header
-- **Last 7 days** bar chart
+- **Last 7 days** and **last 6 months** bar charts
 - **Live limits** — current 5h session (%, reset time, model in use), weekly
   all-models and weekly top-model limits, straight from the same endpoint the
   Claude Code `/usage` command uses (via the OAuth token the CLI already
@@ -35,8 +35,10 @@ is local: no accounts, no API keys, no telemetry.
 - **Monthly budget** — optional limit with progress bar and a notification
   when the spend crosses it
 - **Privacy mode** — the eye button masks every money value (panel included)
-- **Desktop notification** when the session crosses a configurable threshold
-- **Scroll on the panel widget** to cycle session % / spend today / subscriptions
+- **Desktop notification** when the session or the weekly limits cross a
+  configurable threshold
+- **Scroll on the panel widget** to cycle session % / spend today /
+  subscriptions / reset countdown
 - **Languages**: English, Português (Brasil), Español
 
 ### 🔌 Providers

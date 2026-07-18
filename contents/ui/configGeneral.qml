@@ -46,7 +46,8 @@ Kirigami.FormLayout {
         model: [
             { value: "session", text: "Session %" },
             { value: "today", text: "Spend today" },
-            { value: "subs", text: "Subscriptions total" }
+            { value: "subs", text: "Subscriptions total" },
+            { value: "reset", text: "Session reset countdown" }
         ]
         onActivated: page.cfg_panelDisplay = currentValue
         Component.onCompleted: currentIndex = indexOfValue(page.cfg_panelDisplay)

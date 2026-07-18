@@ -169,6 +169,7 @@ PlasmoidItem {
         if (mode === "today") return money(costToday)
         if (mode === "subs") return hideValues ? "•••"
             : (subscription ? subscription.currency : "US$") + subsTotal()
+        if (mode === "reset") return live ? timeLeft(live.session.resets_at) : "cc"
         return live ? live.session.pct + "%" : (block ? money(block.costUSD) : "cc")
     }
 
@@ -263,7 +264,7 @@ PlasmoidItem {
         onClicked: root.expanded = !root.expanded
         // scrolling over the panel widget cycles the display mode
         onWheel: function(wheel) {
-            var modes = ["session", "today", "subs"]
+            var modes = ["session", "today", "subs", "reset"]
             var i = modes.indexOf(Plasmoid.configuration.panelDisplay)
             var next = (i + (wheel.angleDelta.y < 0 ? 1 : modes.length - 1)) % modes.length
             Plasmoid.configuration.panelDisplay = modes[next]
@@ -286,7 +287,7 @@ PlasmoidItem {
                 text: root.compactText()
                 font.family: "monospace"
                 font.bold: true
-                color: Plasmoid.configuration.panelDisplay === "session" && root.live
+                color: ["session", "reset"].indexOf(Plasmoid.configuration.panelDisplay) >= 0 && root.live
                     ? root.sevColor(root.live.session.pct) : Kirigami.Theme.textColor
             }
         }
